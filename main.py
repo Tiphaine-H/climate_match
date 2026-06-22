@@ -1,0 +1,2 @@
+
+cities = ["Paris", "London", "Barcelona"]
