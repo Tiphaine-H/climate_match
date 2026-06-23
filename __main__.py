@@ -14,7 +14,7 @@ city_names = ["Barcelona",
               ]
 
 
-def eval(pref_temp, mode, start_date=None, end_date=None):
+def compute_score(pref_temp, mode, start_date=None, end_date=None):
     """
     takes preference as input
     returns a score : the lower the better (closer to preferences input)
@@ -64,21 +64,32 @@ def eval(pref_temp, mode, start_date=None, end_date=None):
         print("Mode does not exist.")
         sys.exit(1)
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--user")
+    parser.add_argument("--forecast", action="store_true")
+    parser.add_argument("--archive", nargs=2, metavar=("start_date", "end_date"))
+    parser.add_argument("--dashboard", action="store_true")
     args = parser.parse_args()
-    if args.user:
-        mode = sys.argv[2]
+
+    if args.forecast or args.archive:
         print("Enter your preferences :")
         print("Average temperature :")
-        pref_temp = float(input())
-        score_temperature = eval(pref_temp, mode, "2026-05-23", "2026-06-01")
-        # score_temperature = eval(pref_temp, mode)
-
+        while True:
+            try:
+                pref_temp = float(input())
+                break
+            except ValueError:
+                print("The temperature should be given as numericals.")
+        if args.forecast:
+            score_temperature = compute_score(pref_temp, "forecast")
+        else:
+            score_temperature = compute_score(pref_temp, "archive", args.archive[0], args.archive[1])
         scores = dict(zip(city_names, score_temperature))
         print("Your preferred city is : ", min(scores, key=scores.get))
 
+    if args.dashboard:
+        print("todo")
 
 if __name__ == "__main__":
     sys.exit(main())
