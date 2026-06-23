@@ -1,3 +1,3 @@
-from .src.main import main
+from climate_match.src.main import main
 
 main()

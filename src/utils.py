@@ -1,6 +1,6 @@
 import requests
 import sys
-from .constants import city_names
+from climate_match.src.constants import city_names
 
 
 def get_city_coordinates(city):
@@ -18,6 +18,10 @@ def get_city_coordinates(city):
 
     loc = geo["results"][0]
     lat, lon = loc["latitude"], loc["longitude"]
+    
+    # TODO: remove ! TESTS !!!
+    print(city + "," +geo["results"][0]["country"])
+
     return lat, lon
 
 
@@ -25,6 +29,7 @@ def average_temp(weather):
     n = len(weather['daily']["temperature_2m_max"])
     avg = sum(weather['daily']["temperature_2m_max"]) + sum(weather['daily']["temperature_2m_min"])
     return avg / (2*n)
+
 
 def compute_score(pref_temp, mode, start_date=None, end_date=None):
     """
@@ -46,7 +51,7 @@ def compute_score(pref_temp, mode, start_date=None, end_date=None):
                         "latitude": lat,
                         "longitude": lon,
                         "daily": ["temperature_2m_max", "temperature_2m_min",
-                                "precipitation_probability_max"],
+                                    "precipitation_probability_max"],
                         "timezone": "auto",
                         "forecast_days": 10
                     }

@@ -1,9 +1,8 @@
 import sys
 import argparse
-import requests
-import pandas as pd
 from . import utils
-from .constants import city_names
+from climate_match.src.constants import city_names
+from climate_match.src.dashboard import get_yearly_weather, reduce_PCA
 
 
 def main():
@@ -30,7 +29,9 @@ def main():
         print("Your preferred city is : ", min(scores, key=scores.get))
 
     if args.dashboard:
-        print("todo")
+        weather = get_yearly_weather()
+        weather_reduced = reduce_PCA(weather)
+        print(weather_reduced)
 
 if __name__ == "__main__":
     sys.exit(main())
