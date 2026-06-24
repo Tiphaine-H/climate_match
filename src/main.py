@@ -35,8 +35,10 @@ def main():
         weather = utils.get_yearly_weather(city_names)
         weather_reduced = utils.reduce_PCA(weather)
 
+        # utils.find_k(weather_reduced)
+        # K-means algorithm :
         weather_cluster = utils.find_clusters(weather_reduced)
-
+        print(weather_cluster)
         ax = sns.scatterplot(data=weather_cluster,
                              x="PC1",
                              y="PC2",
@@ -44,7 +46,7 @@ def main():
                              palette="tab10")
             
         for idx, row in weather_cluster.iterrows():
-            ax.annotate(str(idx), xy=(row['PC1'], row['PC2']), xytext=(5, 5),
+            ax.annotate(str(idx), xy=(row["PC1"], row["PC2"]), xytext=(5, 5),
                         textcoords='offset points', fontsize=8, color='gray')
         plt.show()
         # todo : add names of points on the graph

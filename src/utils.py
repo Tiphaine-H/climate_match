@@ -40,6 +40,10 @@ def average_temp(weather):
     avg = sum(weather['daily']["temperature_2m_max"]) + sum(weather['daily']["temperature_2m_min"])
     return avg / (2*n)
 
+def average_temp_range(weather):
+    n = len(weather['daily']["temperature_2m_max"])
+    avg = sum(weather['daily']["temperature_2m_max"]) - sum(weather['daily']["temperature_2m_min"])
+    return avg / n
 
 def compute_score(pref_temp, mode, start_date=None, end_date=None):
     """
@@ -96,6 +100,42 @@ def compute_score(pref_temp, mode, start_date=None, end_date=None):
 #    functions for USE CASE 2  #
 ################################
 
+def compute_obs(weather):
+    """
+    weather: json object received from open-meteo API
+    returns list of the value of each desired parameter
+    [yearly_avg_temp_max, yearly_avg_temp_min, avg_temp_coldest_month, avg_temp_hottest_month]
+    """
+    temperature_2m_min = weather['daily']["temperature_2m_min"]
+    n = len(temperature_2m_min)
+    temp_yearly = average_temp(weather)
+    temp_yearly_range = average_temp_range(weather)
+    # find coldest day
+    coldest = min(temperature_2m_min)
+    # day_index = temperature_2m_min.index(coldest)
+    # day = weather['start_date'] + day_index
+    # take 15 days before + 15 days after
+
+    # coldest_month_max 
+    frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
+
+    # yearly precipitation sum
+    precipitation_yearly = sum(weather["daily"]["precipitation_sum"]) / n
+    # easier than dry_months_count :
+    dry_days_count = sum([1 for day_precip in weather["daily"]["precipitation_sum"] if day_precip < 10])
+
+    sunshine_duration_yearly = sum(weather['daily']["sunshine_duration"])
+
+    features = [temp_yearly, 
+                temp_yearly_range, 
+                frost_days_count,
+                precipitation_yearly, 
+                dry_days_count, 
+                sunshine_duration_yearly]
+
+    return features
+
+
 # Get data for the cities over one year
 def get_yearly_weather(cities):
     res = []
@@ -109,14 +149,13 @@ def get_yearly_weather(cities):
                             "start_date": start_date,
                             "end_date": end_date,
                             "daily": ["temperature_2m_max",
-                                        "temperature_2m_min"],
+                                      "temperature_2m_min",
+                                      "precipitation_sum",
+                                      "sunshine_duration"],
                             "timezone": "auto",
                         }
                     ).json()
-        
-        temp_max = weather['daily']["temperature_2m_max"]
-        temp_min = weather['daily']["temperature_2m_min"]
-        res.append(np.array(temp_min + temp_max))
+        res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
     res['City'] = cities
@@ -139,7 +178,7 @@ def reduce_PCA(weather):
     return pca_df
 
 
-def find_clusters(df):
+def find_clusters(df, k=6):
     """
     k-means clustering algorithm
     returns original df with added column "cluster" (numeric)
@@ -148,11 +187,31 @@ def find_clusters(df):
     scaled_df = StandardScaler().fit_transform(df)
 
     # instantiate kmeans class
-    kmeans = KMeans(init="random", n_clusters=6, n_init=10)
+    kmeans = KMeans(init="random", n_clusters=k, n_init=10)
     # fit k-means algorithm to data
     kmeans.fit(scaled_df)
 
     df["cluster"] = kmeans.labels_
-    print(kmeans.inertia_)
+    sse = kmeans.inertia_
+    print(sse)
 
     return df
+
+def find_k(df):
+    """
+    elbow method
+    """
+    scaled_df = StandardScaler().fit_transform(df)
+    sse=[]
+    for i in range(3, 15):
+        kmeans = KMeans(init="random", n_clusters=i, n_init=10)
+        kmeans.fit(scaled_df)
+        sse.append(kmeans.inertia_)
+
+    #visualize results
+    plt.plot(range(3, 15), sse)
+    plt.xticks(range(3, 15))
+    plt.xlabel("Number of Clusters")
+    plt.ylabel("SSE")
+    plt.show()
+
