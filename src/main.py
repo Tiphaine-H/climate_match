@@ -1,8 +1,10 @@
 import sys
 import argparse
 from . import utils
+import matplotlib.pyplot as plt
+import seaborn as sns
 from climate_match.src.constants import city_names
-from climate_match.src.dashboard import get_yearly_weather, reduce_PCA
+from climate_match.src.dashboard import get_yearly_weather, reduce_PCA, find_clusters
 
 
 def main():
@@ -29,9 +31,18 @@ def main():
         print("Your preferred city is : ", min(scores, key=scores.get))
 
     if args.dashboard:
-        weather = get_yearly_weather()
+        weather = get_yearly_weather(city_names)
         weather_reduced = reduce_PCA(weather)
-        print(weather_reduced)
+
+        weather_with_clusters = find_clusters(weather_reduced)
+        print(weather_with_clusters)
+
+        sns.scatterplot(data=weather_with_clusters,
+                        x="PC1", 
+                        y="PC2", 
+                        hue="cluster",
+                        palette="tab10")
+        plt.show()
 
 if __name__ == "__main__":
     sys.exit(main())

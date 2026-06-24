@@ -3,22 +3,17 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.cluster.vq import whiten, kmeans, vq, kmeans2
 from climate_match.src.utils import get_city_coordinates, average_temp
 
 
-cities = ["Paris", "London", "Liverpool"]
 start_date = "2025-01-01"
 end_date = "2025-12-31"
 
 
 # Get data for the cities over one year
-def get_yearly_weather():
+def get_yearly_weather(cities):
     res = []
     for city in cities:
         lat, lon = get_city_coordinates(city)
@@ -39,11 +34,16 @@ def get_yearly_weather():
         temp_min = weather['daily']["temperature_2m_min"]
         res.append(np.array(temp_min + temp_max))
         
-    return pd.DataFrame(res)
+    res = pd.DataFrame(res)
+    res['City'] = cities
+    res = res.set_index('City')
+    return res
 
 
 # reduce dimension with PCA
 def reduce_PCA(weather):
+    cities = weather.index
+    print(cities)
     scaler = StandardScaler()
     weather_scaled = scaler.fit_transform(weather)
     pca = PCA(n_components=2)
@@ -54,17 +54,21 @@ def reduce_PCA(weather):
     pca_df = pca_df.set_index('City')
     return pca_df
 
-# k-means clustering algorithm
 
-#  1. Normalize data points
+def find_clusters(df):
+    """
+    k-means clustering algorithm
+    returns original df with added column "cluster" (numeric)
+    """
+    # Normalize data points
+    scaled_df = StandardScaler().fit_transform(df)
 
+    # instantiate kmeans class
+    kmeans = KMeans(init="random", n_clusters=6, n_init=10)
+    # fit k-means algorithm to data
+    kmeans.fit(scaled_df)
 
+    df["cluster"] = kmeans.labels_
+    print(kmeans.inertia_)
 
-#  2. Compute the centroids 
-
-
-
-
-# 3. Form clusters and assign the data points
-
-
+    return df
