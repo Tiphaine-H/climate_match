@@ -16,7 +16,7 @@ st.title("Find your preferred city !")
 # or present
 with st.container():
     st.subheader("Where to go in the next 10 days ?")
-    pref_temp = st.text_input("What is you preferred temperature ? (daily average)", "Type here...")
+    pref_temp = st.text_input("What is your preferred temperature ? (daily average)", "Type here...")
     if st.button("Submit", key="forecast"):
         pref_temp = float(pref_temp)
         score_temperature = utils.compute_score(pref_temp, "forecast")
