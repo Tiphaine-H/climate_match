@@ -29,14 +29,27 @@ with st.container():
     st.subheader("Where to move long-term?")
     pref_city = st.selectbox("What is your favorite city in this list? (climate-wise)", 
                              city_names)
-    if st.button("Submit", key="clusters"):
-        st.write("favorite city is ", pref_city)
-        
+    if st.button("Submit", key="clusters"):    
         weather = utils.get_yearly_weather(city_names)
         weather_reduced = utils.reduce_PCA(weather)
 
         weather_cluster = utils.find_clusters(weather_reduced)
 
+        # Find other cities that belong to same cluster + print
+        pref_cluster = weather_cluster.loc[pref_city]["cluster"]
+        # List of cities that are also in that cluster :
+        pref_cities_res = weather_cluster[weather_cluster["cluster"] == pref_cluster]
+        # We want other cities than the one given by the user : 
+        pref_cities_res = pref_cities_res.drop(pref_city)
+        pref_cities_res = (pref_cities_res.index).tolist()
+
+        # transform that list into a long string:
+        pref_cities_res_print = ''
+        for city in pref_cities_res:
+            pref_cities_res_print += city + ', '
+        pref_cities_res_print = pref_cities_res_print[:-2] + '.'
+
+        st.write("You could also enjoy living in ", pref_cities_res_print)
 
         # TO REMOVE LATER : 
         ax = sns.scatterplot(data=weather_cluster,
