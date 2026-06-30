@@ -11,7 +11,11 @@ or
 B: over a chosen period of time in the past
 
 ## Use Case 2:
-Create / Update dashboard of cities clustered by climate profiles.
+Cluster cities by climate profiles.
+
+## Use Case 3:
+Dashboard for user to have access to all other use cases.
+
 
 ## How to 
 Depending on use case : 
@@ -28,7 +32,10 @@ start_date and end_date are in format "yyyy-mm-dd"
 
 2:
 
-python3 -m climate_match --dashboard
+python3 -m climate_match --clusters
+
+3 : from inside the project :
+streamlit run dashboard.py 
 
 
 

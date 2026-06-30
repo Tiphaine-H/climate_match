@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: climate_match
+Version: 0.1.0
+Requires-Dist: matplotlib>=3.10.9
+Requires-Dist: numpy>=2.2.6
+Requires-Dist: pandas>=2.3.3
+Requires-Dist: scikit-learn>=1.7.2
+Requires-Dist: seaborn>=0.13.2
+Requires-Dist: streamlit[charts]>=1.58.0

@@ -2,7 +2,6 @@ import sys
 import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
-import streamlit as st
 from PIL import Image
 from climate_match.src.constants import city_names
 from climate_match.src import utils
@@ -12,6 +11,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--forecast", action="store_true")
     parser.add_argument("--archive", nargs=2, metavar=("start_date", "end_date"))
+    parser.add_argument("--clusters", action="store_true")
     parser.add_argument("--dashboard", action="store_true")
     args = parser.parse_args()
 
@@ -31,7 +31,7 @@ def main():
         scores = dict(zip(city_names, score_temperature))
         print("Your preferred city is : ", min(scores, key=scores.get))
 
-    if args.dashboard:
+    if args.clusters:
         weather = utils.get_yearly_weather(city_names)
         weather_reduced = utils.reduce_PCA(weather)
 
@@ -49,7 +49,6 @@ def main():
             ax.annotate(str(idx), xy=(row["PC1"], row["PC2"]), xytext=(5, 5),
                         textcoords='offset points', fontsize=8, color='gray')
         plt.show()
-        # todo : add names of points on the graph
         # todo : save in file instead of show
         # plt.plot(weather_reduced["PC1"], weather_reduced["PC2"], marker="o", linestyle='None')
         # plt.savefig("climate_match/images/weather_cluster.png")  # saves to a file you can open

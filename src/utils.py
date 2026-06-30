@@ -58,6 +58,7 @@ def compute_score(pref_temp, mode, start_date=None, end_date=None):
         for city in city_names:
             lat, lon = get_city_coordinates(city)
             #  get weather data for this set of (lat, lon)
+            print(mode)
             if mode == "forecast":
                 weather = requests.get(
                     "https://api.open-meteo.com/v1/forecast",
@@ -202,7 +203,7 @@ def find_k(df):
     elbow method
     """
     scaled_df = StandardScaler().fit_transform(df)
-    sse=[]
+    sse = []
     for i in range(3, 15):
         kmeans = KMeans(init="random", n_clusters=i, n_init=10)
         kmeans.fit(scaled_df)
