@@ -43,13 +43,16 @@ with st.container():
         pref_cities_res = pref_cities_res.drop(pref_city)
         pref_cities_res = (pref_cities_res.index).tolist()
 
-        # transform that list into a long string:
-        pref_cities_res_print = ''
-        for city in pref_cities_res:
-            pref_cities_res_print += city + ', '
-        pref_cities_res_print = pref_cities_res_print[:-2] + '.'
+        if pref_cities_res:
+            # transform that list into a long string:
+            pref_cities_res_print = ''
+            for city in pref_cities_res:
+                pref_cities_res_print += city + ', '
+            pref_cities_res_print = pref_cities_res_print[:-2] + '.'
 
-        st.write("You could also enjoy living in ", pref_cities_res_print)
+            st.write("You could also enjoy living in ", pref_cities_res_print)
+        else:
+            st.write(f"{pref_city} is too different from all other cities in the list for now.")
 
         # TO REMOVE LATER : 
         ax = sns.scatterplot(data=weather_cluster,
