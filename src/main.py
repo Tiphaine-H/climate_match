@@ -21,13 +21,25 @@ def main():
         while True:
             try:
                 pref_temp = float(input())
+                print("Average amplitude of temperatures :")
+                pref_range = float(input())
+                print("How much rain :  (between 0 and 6)")
+                pref_precip = float(input())
                 break
             except ValueError:
                 print("The temperature should be given as numericals.")
         if args.forecast:
-            score_temperature = utils.compute_score(pref_temp, "forecast")
+            score_temperature = utils.compute_score(pref_temp, 
+                                                    pref_range,
+                                                    pref_precip, 
+                                                    "forecast")
         else:
-            score_temperature = utils.compute_score(pref_temp, "archive", args.archive[0], args.archive[1])
+            score_temperature = utils.compute_score(pref_temp, 
+                                                    pref_range,
+                                                    pref_precip,
+                                                    "archive", 
+                                                    args.archive[0], 
+                                                    args.archive[1])
         scores = dict(zip(city_names, score_temperature))
         print("Your preferred city is : ", min(scores, key=scores.get))
 

@@ -16,11 +16,18 @@ st.title("Find your preferred city !")
 # or present
 with st.container():
     st.subheader("Where to go in the next 10 days ?")
-    pref_temp = st.slider("What is your preferred temperature ? (daily average)", 
+    pref_temp = st.slider("What is your preferred temperature ?", 
                           min_value=-20, max_value=30)
+    pref_range = st.slider("What is your preferred temperature amplitude ?", 
+                           min_value=0, max_value=15)
+    pref_precip = st.slider("How much rain are you ready for ?", 
+                            min_value=0, max_value=6)
     if st.button("Submit", key="forecast"):
         pref_temp = float(pref_temp)
-        score_temperature = utils.compute_score(pref_temp, "forecast")
+        score_temperature = utils.compute_score(pref_temp, 
+                                                pref_range, 
+                                                pref_precip, 
+                                                "forecast")
         scores = dict(zip(city_names, score_temperature))
         pref_city_res = min(scores, key=scores.get)
         st.write("Your preferred city for the next 10 days would be ", pref_city_res)

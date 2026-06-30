@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 from climate_match.src.constants import city_names
 
 
-start_date = "2025-01-01"
-end_date = "2025-12-31"
-
+features_to_get = ["temperature_2m_max",
+            "temperature_2m_min",
+            "precipitation_sum",
+            "sunshine_duration"]
 
 def get_city_coordinates(city):
     """
@@ -45,7 +46,7 @@ def average_temp_range(weather):
     avg = sum(weather['daily']["temperature_2m_max"]) - sum(weather['daily']["temperature_2m_min"])
     return avg / n
 
-def compute_score(pref_temp, mode, start_date=None, end_date=None):
+def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end_date=None):
     """
     takes preference as input
     returns a score : the lower the better (closer to preferences input)
@@ -54,19 +55,19 @@ def compute_score(pref_temp, mode, start_date=None, end_date=None):
     """
     try:
         score_temperature = []
+        score_temperature_ampl = []
+        score_precipitation = []
 
         for city in city_names:
             lat, lon = get_city_coordinates(city)
             #  get weather data for this set of (lat, lon)
-            print(mode)
             if mode == "forecast":
                 weather = requests.get(
                     "https://api.open-meteo.com/v1/forecast",
                     params={
                         "latitude": lat,
                         "longitude": lon,
-                        "daily": ["temperature_2m_max", "temperature_2m_min",
-                                    "precipitation_probability_max"],
+                        "daily": features_to_get,
                         "timezone": "auto",
                         "forecast_days": 10
                     }
@@ -80,20 +81,29 @@ def compute_score(pref_temp, mode, start_date=None, end_date=None):
                         "longitude": lon,
                         "start_date": start_date,
                         "end_date": end_date,
-                        "daily": ["temperature_2m_max",
-                                    "temperature_2m_min"],
+                        "daily": features_to_get,
                         "timezone": "auto",
                     }
                 ).json()
         
+            features = compute_obs(weather)
+            avg_temp = features[0]
+            temp_yearly_range = features[1]
+            precipitation = features[3]
             # compute average temperatures
-            avg_temp = (average_temp(weather))
+            
             # the lower the score, the better
             score_temperature.append(abs(avg_temp - pref_temp))
-        return score_temperature
+            score_temperature_ampl.append(abs(temp_yearly_range - pref_range))
+            score_precipitation.append(abs(precipitation - pref_precip))
+        total = (np.array(score_temperature) 
+                 + np.array(score_temperature_ampl) 
+                 + np.array(score_precipitation))
+        return total.tolist()
     
-    except:
-        print("Mode does not exist.")
+    except Exception as e:
+        print("Mode does not exist, or other issue interrupted:")
+        print(e)
         sys.exit(1)
 
 
@@ -139,6 +149,8 @@ def compute_obs(weather):
 
 # Get data for the cities over one year
 def get_yearly_weather(cities):
+    start_date = "2025-01-01"
+    end_date = "2026-01-01"
     res = []
     for city in cities:
         lat, lon = get_city_coordinates(city)
@@ -149,10 +161,7 @@ def get_yearly_weather(cities):
                             "longitude": lon,
                             "start_date": start_date,
                             "end_date": end_date,
-                            "daily": ["temperature_2m_max",
-                                      "temperature_2m_min",
-                                      "precipitation_sum",
-                                      "sunshine_duration"],
+                            "daily": features_to_get,
                             "timezone": "auto",
                         }
                     ).json()
