@@ -2,8 +2,6 @@ import streamlit as st
 import sys
 import os
 import seaborn as sns
-import matplotlib.pyplot as plt
-from PIL import Image
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from climate_match.src.constants import city_names
@@ -20,15 +18,24 @@ with st.container():
     st.write("Please describe your ideal weather below:")
 
     use_nl = st.checkbox("Use natural language instead of sliders", value=False)
-    
+
+    # LLM + parsing to get preferences
     if use_nl:
         nl_input = st.text_area(
             "e.g. \"I want a lot of sunlight, I don't mind cold weather\"",
             height=80,
         )
         if st.button("Submit", key="forecast-llm"):
-            st.error("work in progress")
+            if nl_input.strip():
+                with st.spinner("Reading your preferences..."):
+                    weights = parse_preferences_nl(nl_input)
+                st.session_state["preference_weights"] = weights
+                st.write("Here's what I understood:")
+                st.json(weights)
+            else:
+                st.warning("Type something first!")
 
+    # sliders for preferences 
     else:
         pref_temp = st.slider("What is your preferred temperature ?",
                             min_value=-20, max_value=30)

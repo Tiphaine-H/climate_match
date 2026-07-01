@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+from transformers import pipeline
 from climate_match.src.constants import city_names
 
 
@@ -244,10 +245,16 @@ def find_k(df):
 def find_holiday_place(pref_temp, pref_range, pref_precip, status):
     pref_temp = float(pref_temp)
     score_temperature = compute_score(pref_temp,
-                                            pref_range,
-                                            pref_precip,
-                                            "forecast")
+                                      pref_range,
+                                      pref_precip,
+                                      "forecast")
     scores = dict(zip(city_names, score_temperature))
     pref_city_res = min(scores, key=scores.get)
     status.update(label="Computing complete!", state="complete")
     return pref_city_res
+
+
+def parse_preferences_nl(nl_input):
+    print("work in progress")
+    classifier = pipeline("zero-shot-classification")
+    # TODO : rather sentence-transformers similarity (less heavy, better for streamlit)

@@ -7,3 +7,4 @@ Requires-Dist: pandas>=2.3.3
 Requires-Dist: scikit-learn>=1.7.2
 Requires-Dist: seaborn>=0.13.2
 Requires-Dist: streamlit[charts]>=1.58.0
+Requires-Dist: transformers>=5.12.1
