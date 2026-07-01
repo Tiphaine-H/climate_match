@@ -234,3 +234,20 @@ def find_k(df):
     plt.xlabel("Number of Clusters")
     plt.ylabel("SSE")
     plt.show()
+
+
+################################
+#    functions for DASHBOARD   #
+################################
+
+
+def find_holiday_place(pref_temp, pref_range, pref_precip, status):
+    pref_temp = float(pref_temp)
+    score_temperature = compute_score(pref_temp,
+                                            pref_range,
+                                            pref_precip,
+                                            "forecast")
+    scores = dict(zip(city_names, score_temperature))
+    pref_city_res = min(scores, key=scores.get)
+    status.update(label="Computing complete!", state="complete")
+    return pref_city_res

@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from climate_match.src.constants import city_names
 from climate_match.src import utils
 
+
 st.title("Find your preferred city !")
 
 # forecast
@@ -22,17 +23,20 @@ with st.container():
                            min_value=0, max_value=15)
     pref_precip = st.slider("How much rain are you ready for ?",
                             min_value=0, max_value=3)
-    if st.button("Submit", key="forecast"):
+    if st.button("Submit", key="forecast-sliders"):
         with st.status("Computing") as status:
-            pref_temp = float(pref_temp)
-            score_temperature = utils.compute_score(pref_temp,
-                                                    pref_range,
-                                                    pref_precip,
-                                                    "forecast")
-            scores = dict(zip(city_names, score_temperature))
-            pref_city_res = min(scores, key=scores.get)
-            status.update(label="Computing complete!", state="complete")
+            pref_city_res = utils.find_holiday_place(pref_temp, pref_range, pref_precip, status)
         st.success(f"Your preferred city for the next 10 days would be {pref_city_res}")
+    
+    st.write("OR")
+
+    st.write("Please indicate your preferences below:")
+    nl_input = st.text_area(
+        "e.g. \"I want a lot of sunlight, I don't mind cold weather\"",
+        height=80,
+    )
+    if st.button("Submit", key="forecast-llm"):
+        st.error("work in progress")
 
 # cluster
 with st.container():
