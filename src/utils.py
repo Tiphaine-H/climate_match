@@ -141,7 +141,7 @@ def compute_obs(weather):
     precip_yearly = sum(precip) / len(precip)
     
     # easier than dry_months_count :
-    dry_days_count = sum([1 for day_precip in precip if day_precip < 10])
+    dry_days_count = sum([1 for day_precip in precip if day_precip < 1])
 
     sunshine_duration = weather['daily']["sunshine_duration"]
     sunshine_duration = [data for data in sunshine_duration if data is not None]

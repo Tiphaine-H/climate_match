@@ -21,7 +21,7 @@ with st.container():
     pref_range = st.slider("What is your preferred temperature amplitude ?", 
                            min_value=0, max_value=15)
     pref_precip = st.slider("How much rain are you ready for ?", 
-                            min_value=0, max_value=6)
+                            min_value=0, max_value=3)
     if st.button("Submit", key="forecast"):
         pref_temp = float(pref_temp)
         score_temperature = utils.compute_score(pref_temp, 
