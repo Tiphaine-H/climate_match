@@ -10,9 +10,10 @@ from climate_match.src.constants import city_names
 
 
 features_to_get = ["temperature_2m_max",
-            "temperature_2m_min",
-            "precipitation_sum",
-            "sunshine_duration"]
+                   "temperature_2m_min",
+                   "precipitation_sum",
+                   "sunshine_duration"]
+
 
 def get_city_coordinates(city):
     """
@@ -31,7 +32,7 @@ def get_city_coordinates(city):
     lat, lon = loc["latitude"], loc["longitude"]
     
     # TODO: remove ! TESTS !!!
-    print(city + "," +geo["results"][0]["country"])
+    print(city + "," + geo["results"][0]["country"])
 
     return lat, lon
 
@@ -41,10 +42,12 @@ def average_temp(weather):
     avg = sum(weather['daily']["temperature_2m_max"]) + sum(weather['daily']["temperature_2m_min"])
     return avg / (2*n)
 
+
 def average_temp_range(weather):
     n = len(weather['daily']["temperature_2m_max"])
     avg = sum(weather['daily']["temperature_2m_max"]) - sum(weather['daily']["temperature_2m_min"])
     return avg / n
+
 
 def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end_date=None):
     """
@@ -131,18 +134,25 @@ def compute_obs(weather):
     frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
 
     # yearly precipitation sum
-    precipitation_yearly = sum(weather["daily"]["precipitation_sum"]) / n
+    # remove "lost" data if there is some :
+    precip = weather["daily"]["precipitation_sum"]
+    precip = [data for data in precip if data is not None]
+
+    precip_yearly = sum(precip) / len(precip)
+    
     # easier than dry_months_count :
-    dry_days_count = sum([1 for day_precip in weather["daily"]["precipitation_sum"] if day_precip < 10])
+    dry_days_count = sum([1 for day_precip in precip if day_precip < 10])
 
-    sunshine_duration_yearly = sum(weather['daily']["sunshine_duration"])
+    sunshine_duration = weather['daily']["sunshine_duration"]
+    sunshine_duration = [data for data in sunshine_duration if data is not None]
+    sunshine_duration = sum(sunshine_duration)
 
-    features = [temp_yearly, 
-                temp_yearly_range, 
+    features = [temp_yearly,
+                temp_yearly_range,
                 frost_days_count,
-                precipitation_yearly, 
-                dry_days_count, 
-                sunshine_duration_yearly]
+                precip_yearly,
+                dry_days_count,
+                sunshine_duration]
 
     return features
 
