@@ -17,26 +17,30 @@ st.title("Find your preferred city !")
 # or present
 with st.container():
     st.subheader("Where to go in the next 10 days ?")
-    pref_temp = st.slider("What is your preferred temperature ?",
-                          min_value=-20, max_value=30)
-    pref_range = st.slider("What is your preferred temperature amplitude ?",
-                           min_value=0, max_value=15)
-    pref_precip = st.slider("How much rain are you ready for ?",
-                            min_value=0, max_value=3)
-    if st.button("Submit", key="forecast-sliders"):
-        with st.status("Computing") as status:
-            pref_city_res = utils.find_holiday_place(pref_temp, pref_range, pref_precip, status)
-        st.success(f"Your preferred city for the next 10 days would be {pref_city_res}")
-    
-    st.write("OR")
+    st.write("Please describe your ideal weather below:")
 
-    st.write("Please indicate your preferences below:")
-    nl_input = st.text_area(
-        "e.g. \"I want a lot of sunlight, I don't mind cold weather\"",
-        height=80,
-    )
-    if st.button("Submit", key="forecast-llm"):
-        st.error("work in progress")
+    use_nl = st.checkbox("Use natural language instead of sliders", value=False)
+    
+    if use_nl:
+        nl_input = st.text_area(
+            "e.g. \"I want a lot of sunlight, I don't mind cold weather\"",
+            height=80,
+        )
+        if st.button("Submit", key="forecast-llm"):
+            st.error("work in progress")
+
+    else:
+        pref_temp = st.slider("What is your preferred temperature ?",
+                            min_value=-20, max_value=30)
+        pref_range = st.slider("What is your preferred temperature amplitude ?",
+                            min_value=0, max_value=15)
+        pref_precip = st.slider("How much rain are you ready for ?",
+                                min_value=0, max_value=3)
+        if st.button("Submit", key="forecast-sliders"):
+            with st.status("Computing") as status:
+                pref_city_res = utils.find_holiday_place(pref_temp, pref_range, pref_precip, status)
+            st.success(f"Your preferred city for the next 10 days would be {pref_city_res}")
+    
 
 # cluster
 with st.container():
