@@ -234,4 +234,3 @@ def find_k(df):
     plt.xlabel("Number of Clusters")
     plt.ylabel("SSE")
     plt.show()
-

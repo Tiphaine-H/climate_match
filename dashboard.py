@@ -16,40 +16,44 @@ st.title("Find your preferred city !")
 # or present
 with st.container():
     st.subheader("Where to go in the next 10 days ?")
-    pref_temp = st.slider("What is your preferred temperature ?", 
+    pref_temp = st.slider("What is your preferred temperature ?",
                           min_value=-20, max_value=30)
-    pref_range = st.slider("What is your preferred temperature amplitude ?", 
+    pref_range = st.slider("What is your preferred temperature amplitude ?",
                            min_value=0, max_value=15)
-    pref_precip = st.slider("How much rain are you ready for ?", 
+    pref_precip = st.slider("How much rain are you ready for ?",
                             min_value=0, max_value=3)
     if st.button("Submit", key="forecast"):
-        pref_temp = float(pref_temp)
-        score_temperature = utils.compute_score(pref_temp, 
-                                                pref_range, 
-                                                pref_precip, 
-                                                "forecast")
-        scores = dict(zip(city_names, score_temperature))
-        pref_city_res = min(scores, key=scores.get)
-        st.write("Your preferred city for the next 10 days would be ", pref_city_res)
+        with st.status("Computing") as status:
+            pref_temp = float(pref_temp)
+            score_temperature = utils.compute_score(pref_temp,
+                                                    pref_range,
+                                                    pref_precip,
+                                                    "forecast")
+            scores = dict(zip(city_names, score_temperature))
+            pref_city_res = min(scores, key=scores.get)
+            status.update(label="Computing complete!", state="complete")
+        st.success(f"Your preferred city for the next 10 days would be {pref_city_res}")
 
 # cluster
 with st.container():
     st.subheader("Where to move long-term?")
     pref_city = st.selectbox("What is your favorite city in this list? (climate-wise)", 
                              city_names)
-    if st.button("Submit", key="clusters"):    
-        weather = utils.get_yearly_weather(city_names)
-        weather_reduced = utils.reduce_PCA(weather)
+    if st.button("Submit", key="clusters"):
+        with st.status("Computing") as status:
+            weather = utils.get_yearly_weather(city_names)
+            weather_reduced = utils.reduce_PCA(weather)
 
-        weather_cluster = utils.find_clusters(weather_reduced)
+            weather_cluster = utils.find_clusters(weather_reduced)
 
-        # Find other cities that belong to same cluster + print
-        pref_cluster = weather_cluster.loc[pref_city]["cluster"]
-        # List of cities that are also in that cluster :
-        pref_cities_res = weather_cluster[weather_cluster["cluster"] == pref_cluster]
-        # We want other cities than the one given by the user : 
-        pref_cities_res = pref_cities_res.drop(pref_city)
-        pref_cities_res = (pref_cities_res.index).tolist()
+            # Find other cities that belong to same cluster + print
+            pref_cluster = weather_cluster.loc[pref_city]["cluster"]
+            # List of cities that are also in that cluster :
+            pref_cities_res = weather_cluster[weather_cluster["cluster"] == pref_cluster]
+            # We want other cities than the one given by the user : 
+            pref_cities_res = pref_cities_res.drop(pref_city)
+            pref_cities_res = (pref_cities_res.index).tolist()
+            status.update(label="Computing complete!", state="complete")
 
         if pref_cities_res:
             # transform that list into a long string:
@@ -58,19 +62,19 @@ with st.container():
                 pref_cities_res_print += city + ', '
             pref_cities_res_print = pref_cities_res_print[:-2] + '.'
 
-            st.write("You could also enjoy living in ", pref_cities_res_print)
+            st.success(f"You could also enjoy living in {pref_cities_res_print}")
         else:
-            st.write(f"{pref_city} is too different from all other cities in the list for now.")
+            st.error(f"{pref_city} is too different from all other cities in the list for now.")
 
-        # TO REMOVE LATER : 
+        # TO REMOVE LATER :
         ax = sns.scatterplot(data=weather_cluster,
-                             x="PC1",
-                             y="PC2",
-                             hue="cluster",
-                             palette="tab10")
+                            x="PC1",
+                            y="PC2",
+                            hue="cluster",
+                            palette="tab10")
 
         for idx, row in weather_cluster.iterrows():
             ax.annotate(str(idx), xy=(row["PC1"], row["PC2"]), xytext=(5, 5),
                         textcoords='offset points', fontsize=8, color='gray')
         st.pyplot()
-
+    
