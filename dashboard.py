@@ -27,11 +27,12 @@ with st.container():
         )
         if st.button("Submit", key="forecast-llm"):
             if nl_input.strip():
-                with st.spinner("Reading your preferences..."):
-                    weights = parse_preferences_nl(nl_input)
-                st.session_state["preference_weights"] = weights
-                st.write("Here's what I understood:")
-                st.json(weights)
+                st.error("Work in Progress : Please use the sliders for now. ")
+                # with st.spinner("Reading your preferences..."):
+                #     weights = utils.parse_preferences_nl(nl_input)
+                # st.session_state["preference_weights"] = weights
+                # st.write("Here's what I understood:")
+                # st.json(weights)
             else:
                 st.warning("Type something first!")
 
