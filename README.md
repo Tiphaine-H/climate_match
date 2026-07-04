@@ -19,6 +19,10 @@ Dashboard for user to have access to all other use cases.
 
 
 ## How to 
+
+
+source .venv/bin/activate
+
 Depending on use case : 
 
 1A: 
