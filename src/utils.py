@@ -41,8 +41,8 @@ def get_city_coordinates(city):
     loc = geo["results"][0]
     lat, lon = loc["latitude"], loc["longitude"]
     
-    # TODO: remove ! TESTS !!!
-    print(city + ", " + geo["results"][0]["country"])
+    # # TODO: remove ! TESTS !!!
+    # print(city + ", " + geo["results"][0]["country"])
 
     return lat, lon
 
@@ -257,7 +257,7 @@ def get_yearly_weather(cities):
         res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
-    print(res.corr())
+    # print(res.corr())
 
     res['City'] = cities
     res = res.set_index('City')
@@ -267,7 +267,7 @@ def get_yearly_weather(cities):
 # reduce dimension with PCA
 def reduce_PCA(weather, n_components=2):
     cities = weather.index
-    print(cities)
+    # print(cities)
     scaler = StandardScaler()
     weather_scaled = scaler.fit_transform(weather)
     pca = PCA(n_components)
@@ -276,8 +276,8 @@ def reduce_PCA(weather, n_components=2):
     # Give the dataframe a index to know which city corresponds to which data 
     pca_df['City'] = cities
     pca_df = pca_df.set_index('City')
-    print(pca.components_)
-    print("pca_explained", pca.explained_variance_ratio_)
+    # print(pca.components_)
+    # print("pca_explained", pca.explained_variance_ratio_)
     return pca_df
 
 
@@ -338,6 +338,6 @@ def find_holiday_place(pref_temp, pref_range, pref_precip, status):
 
 
 def parse_preferences_nl(nl_input):
-    print("work in progress")
+    # print("work in progress")
     classifier = pipeline("zero-shot-classification")
     # TODO : rather sentence-transformers similarity (less heavy, better for streamlit)
