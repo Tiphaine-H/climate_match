@@ -93,7 +93,7 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
             features = compute_obs(weather)
             avg_temp = features[0]
             temp_yearly_range = features[1]
-            precipitation = features[3]
+            precipitation = features[4]
             # compute average temperatures
             
             # the lower the score, the better
@@ -122,17 +122,36 @@ def compute_obs(weather):
     [yearly_avg_temp_max, yearly_avg_temp_min, avg_temp_coldest_month, avg_temp_hottest_month]
     """
     temperature_2m_min = weather['daily']["temperature_2m_min"]
+    temperature_2m_max = weather['daily']["temperature_2m_max"]
     n = len(temperature_2m_min)
     temp_yearly = average_temp(weather)
     temp_yearly_range = average_temp_range(weather)
-    # find coldest day
-    coldest = min(temperature_2m_min)
-    # day_index = temperature_2m_min.index(coldest)
-    # day = weather['start_date'] + day_index
-    # take 15 days before + 15 days after
 
-    # coldest_month_max 
-    frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
+    # prepare to find coldest month with sliding window:
+    temp_min = temperature_2m_min + temperature_2m_min[:30]
+    size_window = 30
+    window_min = temp_min[:size_window]
+    left, right = 0, size_window
+    value_window_min = sum(window_min)
+    coldest_month = value_window_min
+
+    # prepare to find hottest month sum of temperatures
+    temp_max = temperature_2m_max + temperature_2m_max[:30]
+    window_max = temp_max[:size_window]
+    value_window_max = sum(window_max)
+    hottest_month = value_window_max
+
+    # run sliding window to find hottest and coldest months
+    while right < n + 30:
+        value_window_min = value_window_min + temp_min[right] - temp_min[left]
+        value_window_max = value_window_max + temp_max[right] - temp_max[left]
+        coldest_month = min(coldest_month, value_window_min)
+        hottest_month = max(hottest_month, value_window_max)
+        left += 1
+        right += 1
+    
+    # days below 0
+    # frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
 
     # yearly precipitation sum
     # remove "lost" data if there is some :
@@ -150,9 +169,10 @@ def compute_obs(weather):
 
     features = [temp_yearly,
                 temp_yearly_range,
-                frost_days_count,
+                hottest_month - coldest_month,
+                # frost_days_count,
                 precip_yearly,
-                dry_days_count,
+                # dry_days_count,
                 sunshine_duration]
 
     return features
@@ -179,23 +199,28 @@ def get_yearly_weather(cities):
         res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
+    print('res', res)
+    print(res.corr())
+
     res['City'] = cities
     res = res.set_index('City')
     return res
 
 
 # reduce dimension with PCA
-def reduce_PCA(weather):
+def reduce_PCA(weather, n_components=2):
     cities = weather.index
     print(cities)
     scaler = StandardScaler()
     weather_scaled = scaler.fit_transform(weather)
-    pca = PCA(n_components=2)
+    pca = PCA(n_components)
     pca_features = pca.fit_transform(weather_scaled)
     pca_df = pd.DataFrame(pca_features, columns=[f'PC{i+1}' for i in range(pca_features.shape[1])])
     # Give the dataframe a index to know which city corresponds to which data 
     pca_df['City'] = cities
     pca_df = pca_df.set_index('City')
+    print(pca.components_)
+    print("pca_explained", pca.explained_variance_ratio_)
     return pca_df
 
 
@@ -205,7 +230,8 @@ def find_clusters(df, k=6):
     returns original df with added column "cluster" (numeric)
     """
     # Normalize data points
-    scaled_df = StandardScaler().fit_transform(df)
+    scaler = StandardScaler()
+    scaled_df = scaler.fit_transform(df)
 
     # instantiate kmeans class
     kmeans = KMeans(init="random", n_clusters=k, n_init=10)
@@ -213,10 +239,10 @@ def find_clusters(df, k=6):
     kmeans.fit(scaled_df)
 
     df["cluster"] = kmeans.labels_
-    sse = kmeans.inertia_
-    print(sse)
+    # sse = kmeans.inertia_
 
     return df
+
 
 def find_k(df):
     """

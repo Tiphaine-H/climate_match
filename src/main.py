@@ -45,12 +45,19 @@ def main():
 
     if args.clusters:
         weather = utils.get_yearly_weather(city_names)
-        weather_reduced = utils.reduce_PCA(weather)
+        # If pca.explained_variance_ratio_ adds up to much less
+        # than 100%, it is worth it to use all features (5 to 10)
+        # weather = utils.reduce_PCA(weather)
 
         # utils.find_k(weather_reduced)
         # K-means algorithm :
-        weather_cluster = utils.find_clusters(weather_reduced)
+        weather_cluster = utils.find_clusters(weather, 7)
         print(weather_cluster)
+        clusters = weather_cluster["cluster"]
+        weather_cluster = weather_cluster.drop(["cluster"], axis=1)
+        print(weather_cluster)
+        weather_cluster = utils.reduce_PCA(weather_cluster)
+        weather_cluster["cluster"] = clusters
         ax = sns.scatterplot(data=weather_cluster,
                              x="PC1",
                              y="PC2",
