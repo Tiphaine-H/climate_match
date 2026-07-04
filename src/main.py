@@ -23,7 +23,7 @@ def main():
                 pref_temp = float(input())
                 print("Average amplitude of temperatures :")
                 pref_range = float(input())
-                print("How much rain :  (between 0 and 6)")
+                print("How much rain :  (between 0 and 3)")
                 pref_precip = float(input())
                 break
             except ValueError:

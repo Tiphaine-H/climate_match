@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 from transformers import pipeline
 from climate_match.src.constants import city_names
 
-
+# if this is modified, need to also update the cache structure for stored
+# weather data previously collected
 features_to_get = ["temperature_2m_max",
                    "temperature_2m_min",
                    "precipitation_sum",
@@ -57,65 +58,65 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
     can be in forecast (mode= forecast, no date specified)
     or in the past (mode = archive, dates to be specified)
     """
-    try:
-        score_temperature = []
-        score_temperature_ampl = []
-        score_precipitation = []
+    # try:
+    score_temperature = []
+    score_temperature_ampl = []
+    score_precipitation = []
 
-        for city in city_names:
-            lat, lon = get_city_coordinates(city)
-            #  get weather data for this set of (lat, lon)
-            if mode == "forecast":
-                weather = requests.get(
-                    "https://api.open-meteo.com/v1/forecast",
-                    params={
-                        "latitude": lat,
-                        "longitude": lon,
-                        "daily": features_to_get,
-                        "timezone": "auto",
-                        "forecast_days": 10
-                    }
-                ).json()
+    for city in city_names:
+        lat, lon = get_city_coordinates(city)
+        #  get weather data for this set of (lat, lon)
+        if mode == "forecast":
+            weather = requests.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "daily": features_to_get,
+                    "timezone": "auto",
+                    "forecast_days": 10
+                }
+            ).json()
 
-            if mode == "archive":
-                weather = requests.get(
-                    "https://archive-api.open-meteo.com/v1/archive",
-                    params={
-                        "latitude": lat,
-                        "longitude": lon,
-                        "start_date": start_date,
-                        "end_date": end_date,
-                        "daily": features_to_get,
-                        "timezone": "auto",
-                    }
-                ).json()
-        
-            features = compute_obs(weather)
-            avg_temp = features[0]
-            temp_yearly_range = features[1]
-            precipitation = features[4]
-            # compute average temperatures
-            
-            # the lower the score, the better
-            score_temperature.append(abs(avg_temp - pref_temp))
-            score_temperature_ampl.append(abs(temp_yearly_range - pref_range))
-            score_precipitation.append(abs(precipitation - pref_precip))
-        total = (np.array(score_temperature) 
-                 + np.array(score_temperature_ampl) 
-                 + np.array(score_precipitation))
-        return total.tolist()
+        if mode == "archive":
+            weather = requests.get(
+                "https://archive-api.open-meteo.com/v1/archive",
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "daily": features_to_get,
+                    "timezone": "auto",
+                }
+            ).json()
     
-    except Exception as e:
-        print("Mode does not exist, or other issue interrupted:")
-        print(e)
-        sys.exit(1)
+        avg_temp = average_temp(weather)
+        temp_range = average_temp_range(weather)
+        precip = weather["daily"]["precipitation_sum"]
+        precip = [data for data in precip if data is not None]
+        precipitation = sum(precip) / len(precip)
+        
+        # the lower the score, the better
+        score_temperature.append(abs(avg_temp - pref_temp))
+        score_temperature_ampl.append(abs(temp_range - pref_range))
+        score_precipitation.append(abs(precipitation - pref_precip))
+    total = (np.array(score_temperature) 
+                + np.array(score_temperature_ampl) 
+                + np.array(score_precipitation))
+    return total.tolist()
+    
+    # except Exception as e:
+    #     print("Mode does not exist, or other issue interrupted:")
+    #     print(e)
+    #     sys.exit(1)
 
 
 ################################
 #    functions for USE CASE 2  #
 ################################
 
-def compute_obs(weather):
+def compute_obs(weather, size_window=30):
     """
     weather: json object received from open-meteo API
     returns list of the value of each desired parameter
@@ -128,21 +129,20 @@ def compute_obs(weather):
     temp_yearly_range = average_temp_range(weather)
 
     # prepare to find coldest month with sliding window:
-    temp_min = temperature_2m_min + temperature_2m_min[:30]
-    size_window = 30
+    temp_min = temperature_2m_min + temperature_2m_min[:size_window]
     window_min = temp_min[:size_window]
     left, right = 0, size_window
     value_window_min = sum(window_min)
     coldest_month = value_window_min
 
     # prepare to find hottest month sum of temperatures
-    temp_max = temperature_2m_max + temperature_2m_max[:30]
+    temp_max = temperature_2m_max + temperature_2m_max[:size_window]
     window_max = temp_max[:size_window]
     value_window_max = sum(window_max)
     hottest_month = value_window_max
 
     # run sliding window to find hottest and coldest months
-    while right < n + 30:
+    while right < n + size_window:
         value_window_min = value_window_min + temp_min[right] - temp_min[left]
         value_window_max = value_window_max + temp_max[right] - temp_max[left]
         coldest_month = min(coldest_month, value_window_min)
