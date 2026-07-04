@@ -49,15 +49,17 @@ def main():
         # than 100%, it is worth it to use all features (5 to 10)
         # weather = utils.reduce_PCA(weather)
 
-        # utils.find_k(weather_reduced)
+        # utils.find_k(weather)
         # K-means algorithm :
-        weather_cluster = utils.find_clusters(weather, 7)
-        print(weather_cluster)
+        weather_cluster = utils.find_clusters(weather, 9)
+
+        # Do PCA to get 2D representation :
         clusters = weather_cluster["cluster"]
         weather_cluster = weather_cluster.drop(["cluster"], axis=1)
-        print(weather_cluster)
         weather_cluster = utils.reduce_PCA(weather_cluster)
         weather_cluster["cluster"] = clusters
+
+        # do 2D representation
         ax = sns.scatterplot(data=weather_cluster,
                              x="PC1",
                              y="PC2",
@@ -68,6 +70,7 @@ def main():
             ax.annotate(str(idx), xy=(row["PC1"], row["PC2"]), xytext=(5, 5),
                         textcoords='offset points', fontsize=8, color='gray')
         plt.show()
+
         # todo : save in file instead of show
         # plt.plot(weather_reduced["PC1"], weather_reduced["PC2"], marker="o", linestyle='None')
         # plt.savefig("climate_match/images/weather_cluster.png")  # saves to a file you can open

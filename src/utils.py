@@ -33,7 +33,7 @@ def get_city_coordinates(city):
     lat, lon = loc["latitude"], loc["longitude"]
     
     # TODO: remove ! TESTS !!!
-    print(city + "," + geo["results"][0]["country"])
+    print(city + ", " + geo["results"][0]["country"])
 
     return lat, lon
 
@@ -199,7 +199,6 @@ def get_yearly_weather(cities):
         res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
-    print('res', res)
     print(res.corr())
 
     res['City'] = cities
@@ -224,7 +223,7 @@ def reduce_PCA(weather, n_components=2):
     return pca_df
 
 
-def find_clusters(df, k=6):
+def find_clusters(df, k=9):
     """
     k-means clustering algorithm
     returns original df with added column "cluster" (numeric)

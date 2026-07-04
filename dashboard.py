@@ -39,9 +39,9 @@ with st.container():
     # sliders for preferences 
     else:
         pref_temp = st.slider("What is your preferred temperature ?",
-                            min_value=-20, max_value=30)
+                              min_value=-20, max_value=30)
         pref_range = st.slider("What is your preferred temperature amplitude ?",
-                            min_value=0, max_value=15)
+                               min_value=0, max_value=15)
         pref_precip = st.slider("How much rain are you ready for ?",
                                 min_value=0, max_value=3)
         if st.button("Submit", key="forecast-sliders"):
@@ -58,10 +58,10 @@ with st.container():
     if st.button("Submit", key="clusters"):
         with st.status("Computing") as status:
             weather = utils.get_yearly_weather(city_names)
-            weather_reduced = utils.reduce_PCA(weather)
+            # weather = utils.reduce_PCA(weather)
 
-            weather_cluster = utils.find_clusters(weather_reduced)
-
+            weather_cluster = utils.find_clusters(weather)
+            
             # Find other cities that belong to same cluster + print
             pref_cluster = weather_cluster.loc[pref_city]["cluster"]
             # List of cities that are also in that cluster :
@@ -82,7 +82,11 @@ with st.container():
         else:
             st.error(f"{pref_city} is too different from all other cities in the list for now.")
 
-        # TO REMOVE LATER :
+        # # TO REMOVE LATER :
+        clusters = weather_cluster["cluster"]
+        weather_cluster = weather_cluster.drop(["cluster"], axis=1)
+        weather_cluster = utils.reduce_PCA(weather_cluster)
+        weather_cluster["cluster"] = clusters
         ax = sns.scatterplot(data=weather_cluster,
                             x="PC1",
                             y="PC2",
