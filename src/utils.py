@@ -1,5 +1,5 @@
 import requests
-import sys
+from functools import lru_cache
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -17,11 +17,14 @@ features_to_get = ["temperature_2m_max",
                    "sunshine_duration"]
 
 
+
+@lru_cache(maxsize=None)
 def get_city_coordinates(city):
     """
     get the location of the city / connect city name to 
     its latitude and longitude
     """
+
     geo = requests.get(
             "https://geocoding-api.open-meteo.com/v1/search",
             params={"name": city, "count": 1}
@@ -33,6 +36,7 @@ def get_city_coordinates(city):
     loc = geo["results"][0]
     lat, lon = loc["latitude"], loc["longitude"]
     
+
     # TODO: remove ! TESTS !!!
     print(city + ", " + geo["results"][0]["country"])
 
