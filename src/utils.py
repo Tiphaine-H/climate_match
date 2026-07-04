@@ -24,19 +24,23 @@ def get_city_coordinates(city):
     get the location of the city / connect city name to 
     its latitude and longitude
     """
+    try:
+        resp = requests.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": city, "count": 1},
+                timeout=5,
+            )
+        resp.raise_for_status()
+        geo = resp.json()
 
-    geo = requests.get(
-            "https://geocoding-api.open-meteo.com/v1/search",
-            params={"name": city, "count": 1}
-        ).json()
-
-    if not geo.get("results"):
-        print("City {} Not Found".format(city))
-
+        if not geo.get("results"):
+            print("City {} Not Found".format(city))
+    except requests.exceptions.RequestException as e:
+        raise ValueError(f"Failed to fetch coordinates for {city}: {e}") from e
+    
     loc = geo["results"][0]
     lat, lon = loc["latitude"], loc["longitude"]
     
-
     # TODO: remove ! TESTS !!!
     print(city + ", " + geo["results"][0]["country"])
 
@@ -73,7 +77,7 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
         lat, lon = get_city_coordinates(city)
         #  get weather data for this set of (lat, lon)
         if mode == "forecast":
-            if city in cache_weather_forecast.keys():
+            if city in cache_weather_forecast:
                 weather = cache_weather_forecast[city]
             else:
                 weather = requests.get(
@@ -136,7 +140,7 @@ def compute_obs(weather, size_window=30):
     """
     lat, lon = weather["latitude"], weather["longitude"]
 
-    if (lat, lon) in cache_features.keys():
+    if (lat, lon) in cache_features:
         features = cache_features[(lat, lon)]
     else:
         temperature_2m_min = weather['daily']["temperature_2m_min"]
@@ -205,7 +209,7 @@ def get_yearly_weather(cities):
     res = []
     for city in cities:
         lat, lon = get_city_coordinates(city)
-        if city in cache_weather.keys():
+        if city in cache_weather:
             weather = cache_weather[city]
         else:
             weather = requests.get(
