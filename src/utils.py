@@ -55,6 +55,8 @@ def average_temp_range(weather):
     return avg / n
 
 
+cache_weather_forecast = dict()
+
 def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end_date=None):
     """
     takes preference as input
@@ -71,16 +73,20 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
         lat, lon = get_city_coordinates(city)
         #  get weather data for this set of (lat, lon)
         if mode == "forecast":
-            weather = requests.get(
-                "https://api.open-meteo.com/v1/forecast",
-                params={
-                    "latitude": lat,
-                    "longitude": lon,
-                    "daily": features_to_get,
-                    "timezone": "auto",
-                    "forecast_days": 10
-                }
-            ).json()
+            if city in cache_weather_forecast.keys():
+                weather = cache_weather_forecast[city]
+            else:
+                weather = requests.get(
+                    "https://api.open-meteo.com/v1/forecast",
+                    params={
+                        "latitude": lat,
+                        "longitude": lon,
+                        "daily": features_to_get,
+                        "timezone": "auto",
+                        "forecast_days": 10
+                    }
+                ).json()
+                cache_weather_forecast[city] = weather
 
         if mode == "archive":
             weather = requests.get(
@@ -119,6 +125,8 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
 ################################
 #    functions for USE CASE 2  #
 ################################
+cache_features = dict()
+
 
 def compute_obs(weather, size_window=30):
     """
@@ -126,60 +134,68 @@ def compute_obs(weather, size_window=30):
     returns list of the value of each desired parameter
     [yearly_avg_temp_max, yearly_avg_temp_min, avg_temp_coldest_month, avg_temp_hottest_month]
     """
-    temperature_2m_min = weather['daily']["temperature_2m_min"]
-    temperature_2m_max = weather['daily']["temperature_2m_max"]
-    n = len(temperature_2m_min)
-    temp_yearly = average_temp(weather)
-    temp_yearly_range = average_temp_range(weather)
+    lat, lon = weather["latitude"], weather["longitude"]
 
-    # prepare to find coldest month with sliding window:
-    temp_min = temperature_2m_min + temperature_2m_min[:size_window]
-    window_min = temp_min[:size_window]
-    left, right = 0, size_window
-    value_window_min = sum(window_min)
-    coldest_month = value_window_min
+    if (lat, lon) in cache_features.keys():
+        features = cache_features[(lat, lon)]
+    else:
+        temperature_2m_min = weather['daily']["temperature_2m_min"]
+        temperature_2m_max = weather['daily']["temperature_2m_max"]
+        n = len(temperature_2m_min)
+        temp_yearly = average_temp(weather)
+        temp_yearly_range = average_temp_range(weather)
 
-    # prepare to find hottest month sum of temperatures
-    temp_max = temperature_2m_max + temperature_2m_max[:size_window]
-    window_max = temp_max[:size_window]
-    value_window_max = sum(window_max)
-    hottest_month = value_window_max
+        # prepare to find coldest month with sliding window:
+        temp_min = temperature_2m_min + temperature_2m_min[:size_window]
+        window_min = temp_min[:size_window]
+        left, right = 0, size_window
+        value_window_min = sum(window_min)
+        coldest_month = value_window_min
 
-    # run sliding window to find hottest and coldest months
-    while right < n + size_window:
-        value_window_min = value_window_min + temp_min[right] - temp_min[left]
-        value_window_max = value_window_max + temp_max[right] - temp_max[left]
-        coldest_month = min(coldest_month, value_window_min)
-        hottest_month = max(hottest_month, value_window_max)
-        left += 1
-        right += 1
-    
-    # days below 0
-    # frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
+        # prepare to find hottest month sum of temperatures
+        temp_max = temperature_2m_max + temperature_2m_max[:size_window]
+        window_max = temp_max[:size_window]
+        value_window_max = sum(window_max)
+        hottest_month = value_window_max
 
-    # yearly precipitation sum
-    # remove "lost" data if there is some :
-    precip = weather["daily"]["precipitation_sum"]
-    precip = [data for data in precip if data is not None]
+        # run sliding window to find hottest and coldest months
+        while right < n + size_window:
+            value_window_min = value_window_min + temp_min[right] - temp_min[left]
+            value_window_max = value_window_max + temp_max[right] - temp_max[left]
+            coldest_month = min(coldest_month, value_window_min)
+            hottest_month = max(hottest_month, value_window_max)
+            left += 1
+            right += 1
+        
+        # days below 0
+        # frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
 
-    precip_yearly = sum(precip) / len(precip)
-    
-    # easier than dry_months_count :
-    dry_days_count = sum([1 for day_precip in precip if day_precip < 1])
+        # yearly precipitation sum
+        # remove "lost" data if there is some :
+        precip = weather["daily"]["precipitation_sum"]
+        precip = [data for data in precip if data is not None]
 
-    sunshine_duration = weather['daily']["sunshine_duration"]
-    sunshine_duration = [data for data in sunshine_duration if data is not None]
-    sunshine_duration = sum(sunshine_duration)
+        precip_yearly = sum(precip) / len(precip)
+        
+        # easier than dry_months_count :
+        dry_days_count = sum([1 for day_precip in precip if day_precip < 1])
 
-    features = [temp_yearly,
-                temp_yearly_range,
-                hottest_month - coldest_month,
-                # frost_days_count,
-                precip_yearly,
-                # dry_days_count,
-                sunshine_duration]
+        sunshine_duration = weather['daily']["sunshine_duration"]
+        sunshine_duration = [data for data in sunshine_duration if data is not None]
+        sunshine_duration = sum(sunshine_duration)
 
+        features = [temp_yearly,
+                    temp_yearly_range,
+                    hottest_month - coldest_month,
+                    # frost_days_count,
+                    precip_yearly,
+                    # dry_days_count,
+                    sunshine_duration]
+        cache_features[(lat, lon)] = features
     return features
+
+
+cache_weather = dict()
 
 
 # Get data for the cities over one year
@@ -189,17 +205,21 @@ def get_yearly_weather(cities):
     res = []
     for city in cities:
         lat, lon = get_city_coordinates(city)
-        weather = requests.get(
-                        "https://archive-api.open-meteo.com/v1/archive",
-                        params={
-                            "latitude": lat,
-                            "longitude": lon,
-                            "start_date": start_date,
-                            "end_date": end_date,
-                            "daily": features_to_get,
-                            "timezone": "auto",
-                        }
+        if city in cache_weather.keys():
+            weather = cache_weather[city]
+        else:
+            weather = requests.get(
+                            "https://archive-api.open-meteo.com/v1/archive",
+                            params={
+                                "latitude": lat,
+                                "longitude": lon,
+                                "start_date": start_date,
+                                "end_date": end_date,
+                                "daily": features_to_get,
+                                "timezone": "auto",
+                            }
                     ).json()
+            cache_weather[city] = weather
         res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
