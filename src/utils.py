@@ -61,6 +61,7 @@ def average_temp_range(weather):
 
 cache_weather_forecast = dict()
 
+
 def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end_date=None):
     """
     takes preference as input
@@ -143,12 +144,24 @@ def compute_obs(weather, size_window=30):
     if (lat, lon) in cache_features:
         features = cache_features[(lat, lon)]
     else:
+        # GET RAW FEATURES
         temperature_2m_min = weather['daily']["temperature_2m_min"]
         temperature_2m_max = weather['daily']["temperature_2m_max"]
+        precip = weather["daily"]["precipitation_sum"]
+        # remove "lost" data if there is some :
+        precip = [data for data in precip if data is not None]
+
         n = len(temperature_2m_min)
+
+        # AVG_TEMP
         temp_yearly = average_temp(weather)
+
+        # AVG RANGE
         temp_yearly_range = average_temp_range(weather)
 
+        # AVG PRECIPITATION (rain + snow + ...)
+        precip_yearly = sum(precip) / len(precip)
+        
         # prepare to find coldest month with sliding window:
         temp_min = temperature_2m_min + temperature_2m_min[:size_window]
         window_min = temp_min[:size_window]
@@ -171,19 +184,34 @@ def compute_obs(weather, size_window=30):
             left += 1
             right += 1
         
+        # sliding window for dryest month
+        n_precip = len(precip)
+        window_precip = precip[:size_window]
+        left, right = 0, size_window
+        value_window_precip = sum(window_precip)
+        dryest_month = value_window_precip
+        while right < n_precip:
+            value_window_precip = value_window_precip + precip[right] - precip[left]
+            dryest_month = min(dryest_month, value_window_precip)
+            left += 1
+            right += 1
+
+
         # days below 0
         # frost_days_count = sum([1 for day_temp in weather["daily"]["temperature_2m_min"] if day_temp < 0])
 
-        # yearly precipitation sum
-        # remove "lost" data if there is some :
-        precip = weather["daily"]["precipitation_sum"]
-        precip = [data for data in precip if data is not None]
-
-        precip_yearly = sum(precip) / len(precip)
+        # dry_months_count :
+        precip_per_month = []
+        for k in range(12):
+            precip_month = sum(precip[30*k:30*(k+1)])
+            precip_per_month.append(precip_month)
+        dry_months_count = sum([1 for precip_month in precip_per_month 
+                                if precip_month < 10])
         
-        # easier than dry_months_count :
-        dry_days_count = sum([1 for day_precip in precip if day_precip < 1])
-
+        # WET MONTHS COUNT
+        # drenched_months_count = sum([1 for precip_month in precip_per_month 
+        #                            if precip_month > 50])
+        
         sunshine_duration = weather['daily']["sunshine_duration"]
         sunshine_duration = [data for data in sunshine_duration if data is not None]
         sunshine_duration = sum(sunshine_duration)
@@ -193,7 +221,9 @@ def compute_obs(weather, size_window=30):
                     hottest_month - coldest_month,
                     # frost_days_count,
                     precip_yearly,
-                    # dry_days_count,
+                    dryest_month,
+                    dry_months_count,
+                    # drenched_months_count,
                     sunshine_duration]
         cache_features[(lat, lon)] = features
     return features
