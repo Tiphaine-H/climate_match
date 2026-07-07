@@ -74,3 +74,4 @@ climate_match/
 
 - The app is limited to 52 cities for now, which is already slow on first runs. Future development will include improving the cache, this time using a database to store the data longer term.
 - Clustering is done only on the data of the year 2025. I would like to explore adding data for more years to see if improvement can be achieved. 
+- Instead of flat scores, I will compute the resulting favorite city with weights, replace the sliders with natural language processing, and eventually use a cosine similarity model instead of scores.
