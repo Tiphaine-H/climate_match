@@ -3,8 +3,8 @@ import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
-from climate_match.src.constants import city_names
-from climate_match.src import utils
+from src.constants import city_names
+from src import utils
 
 
 def main():
@@ -47,17 +47,17 @@ def main():
         weather = utils.get_yearly_weather(city_names)
         # If pca.explained_variance_ratio_ adds up to much less
         # than 100%, it is worth it to use all features (5 to 10)
-        # weather = utils.reduce_PCA(weather)
+        weather = utils.reduce_PCA(weather)
 
         # utils.find_k(weather)
         # K-means algorithm :
-        weather_cluster = utils.find_clusters(weather, 9)
+        weather_cluster = utils.find_clusters(weather, 13)
 
-        # Do PCA to get 2D representation :
-        clusters = weather_cluster["cluster"]
-        weather_cluster = weather_cluster.drop(["cluster"], axis=1)
-        weather_cluster = utils.reduce_PCA(weather_cluster)
-        weather_cluster["cluster"] = clusters
+        # # Do PCA to get 2D representation :
+        # clusters = weather_cluster["cluster"]
+        # weather_cluster = weather_cluster.drop(["cluster"], axis=1)
+        # weather_cluster = utils.reduce_PCA(weather_cluster)
+        # weather_cluster["cluster"] = clusters
 
         # do 2D representation
         ax = sns.scatterplot(data=weather_cluster,

@@ -3,9 +3,9 @@ import sys
 import os
 import seaborn as sns
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from climate_match.src.constants import city_names
-from climate_match.src import utils
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.constants import city_names
+from src import utils
 
 
 st.title("Find your preferred city !")

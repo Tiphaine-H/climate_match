@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from transformers import pipeline
-from climate_match.src.constants import city_names
+from src.constants import city_names
 
 # if this is modified, need to also update the cache structure for stored
 # weather data previously collected
@@ -42,7 +42,7 @@ def get_city_coordinates(city):
     lat, lon = loc["latitude"], loc["longitude"]
     
     # # TODO: remove ! TESTS !!!
-    # print(city + ", " + geo["results"][0]["country"])
+    print(city + ", " + geo["results"][0]["country"])
 
     return lat, lon
 
@@ -276,8 +276,8 @@ def reduce_PCA(weather, n_components=2):
     # Give the dataframe a index to know which city corresponds to which data 
     pca_df['City'] = cities
     pca_df = pca_df.set_index('City')
-    # print(pca.components_)
-    # print("pca_explained", pca.explained_variance_ratio_)
+    print(pca.components_)
+    print("pca_explained", pca.explained_variance_ratio_)
     return pca_df
 
 
