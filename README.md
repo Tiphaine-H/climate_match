@@ -34,41 +34,58 @@ Cluster cities by climate profile :
 - matplotlib and seaborn for graphical representation
 
 ## How to: 
-
+  ```
 git clone https://github.com/tiphaine-h/climate_match.git
 cd climate_match
+  ```
 
 ### Using uv (recommended)
+  ```
 uv sync
 source .venv/bin/activate
 uv run streamlit run dashboard.py
+  ```
 
 ### Or with pip
+  ```
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+  ```
 
 Locally runnable options :
 
-- Favorite city based on preferences and 10 days forecast : python3 -m climate_match --forecast
-
-- Favorite city based on preferences and dates : python3 -m climate_match --archive start_date end_date  
+- Favorite city based on preferences and 10 days forecast :
+    ```
+    python3 -m climate_match --forecast
+  ```
+    
+- Favorite city based on preferences and dates :
+    ```
+    python3 -m climate_match --archive start_date end_date  
+  ```
 (start_date and end_date are in format "yyyy-mm-dd")
 
-- clustering algorithm : python3 -m climate_match --clusters
-
-- local dashboard : streamlit run dashboard.py
+- clustering algorithm :
+  ```
+  python3 -m climate_match --clusters
+  ```
+  
+- local dashboard :
+  ```
+  streamlit run dashboard.py
+  ```
 
 ## Repo Structure
 
 climate_match/  
-├── /src  
 │   ├── /src  
 │   ├── main.py                # Entry point  
 │   ├── utils.py               # Computing functions for features, scores, clustering, ...  
 │   └── constants.py           # City names included in project  
 ├── __main__.py   
 └── dashboard.py  
+
  
 ## Limits and Future Development
 
