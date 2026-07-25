@@ -62,7 +62,6 @@ Locally runnable options :
 ## Repo Structure
 
 climate_match/  
-├── /src  
 │   ├── /src  
 │   ├── main.py                # Entry point  
 │   ├── utils.py               # Computing functions for features, scores, clustering, ...  
