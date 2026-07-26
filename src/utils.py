@@ -52,7 +52,7 @@ def save_to_cache(key, data_dict):
             text("""
                 INSERT INTO api_cache (cache_key, data)
                 VALUES (:key, :data)
-                ON DUPLICATE KEY UPDATE data = :data, updated_at = CURRENT_TIMESTAMP
+                ON DUPLICATE KEY UPDATE data = :data
             """),
             {"key": key, "data": json.dumps(data_dict)}
         )
@@ -64,7 +64,6 @@ def get_from_cache(key, max_age_seconds=3600):
             text("""
                 SELECT data FROM api_cache
                 WHERE cache_key = :key
-                AND updated_at > NOW() - INTERVAL :max_age SECOND
             """),
             {"key": key, "max_age": max_age_seconds}
         ).fetchone()
