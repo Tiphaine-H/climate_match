@@ -350,7 +350,7 @@ def reduce_PCA(weather, n_components=2):
     return pca_df
 
 
-def find_clusters(df, k=9):
+def find_clusters(df, k=13):
     """
     k-means clustering algorithm
     returns original df with added column "cluster" (numeric)

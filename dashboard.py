@@ -60,7 +60,7 @@ with st.container():
             weather = utils.get_yearly_weather(city_names)
             # weather = utils.reduce_PCA(weather)
 
-            weather_cluster = utils.find_clusters(weather)
+            weather_cluster = utils.find_clusters(weather, 13)
             
             # Find other cities that belong to same cluster + print
             pref_cluster = weather_cluster.loc[pref_city]["cluster"]
