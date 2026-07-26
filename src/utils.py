@@ -12,6 +12,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from transformers import pipeline
 import json
+from datetime import datetime
 from src.constants import city_names
 
 load_dotenv()
@@ -25,6 +26,17 @@ DB_PASS = os.getenv("MYSQL_ADDON_PASSWORD")
 engine = create_engine(
     f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
+
+CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS api_cache (
+    cache_key VARCHAR(255) PRIMARY KEY,
+    data JSON,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+"""
+
+with engine.begin() as conn:
+    conn.execute(text(CREATE_TABLE_SQL))
 
 # if this is modified, need to also update the cache structure for stored
 # weather data previously collected
@@ -45,6 +57,20 @@ def save_to_cache(key, data_dict):
             {"key": key, "data": json.dumps(data_dict)}
         )
 
+
+def get_from_cache(key, max_age_seconds=3600):
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("""
+                SELECT data FROM api_cache
+                WHERE cache_key = :key
+                AND updated_at > NOW() - INTERVAL :max_age SECOND
+            """),
+            {"key": key, "max_age": max_age_seconds}
+        ).fetchone()
+        return json.loads(result[0]) if result else None
+    
+
 @lru_cache(maxsize=None)
 def get_city_coordinates(city):
     """
@@ -52,16 +78,23 @@ def get_city_coordinates(city):
     its latitude and longitude
     """
     try:
-        resp = requests.get(
-                "https://geocoding-api.open-meteo.com/v1/search",
-                params={"name": city, "count": 1},
-                timeout=5,
-            )
-        resp.raise_for_status()
-        geo = resp.json()
+        cached = get_from_cache(city)
+        print(cached)
+        if cached is not None:
+            geo = cached
 
-        if not geo.get("results"):
-            print("City {} Not Found".format(city))
+        else:
+            resp = requests.get(
+                    "https://geocoding-api.open-meteo.com/v1/search",
+                    params={"name": city, "count": 1},
+                    timeout=5,
+                )
+            resp.raise_for_status()
+            geo = resp.json()
+            save_to_cache(city, geo)
+
+            if not geo.get("results"):
+                print("City {} Not Found".format(city))
     except requests.exceptions.RequestException as e:
         raise ValueError(f"Failed to fetch coordinates for {city}: {e}") from e
     
@@ -108,17 +141,27 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
             if city in cache_weather_forecast:
                 weather = cache_weather_forecast[city]
             else:
-                weather = requests.get(
-                    "https://api.open-meteo.com/v1/forecast",
-                    params={
-                        "latitude": lat,
-                        "longitude": lon,
-                        "daily": features_to_get,
-                        "timezone": "auto",
-                        "forecast_days": 10
-                    }
-                ).json()
-                cache_weather_forecast[city] = weather
+
+                # get from db cache
+                today = datetime.today().strftime('%Y-%m-%d')
+                key = str(lat) + str(lon) + str(today)
+                weather = get_from_cache(key)
+
+                # if it's in, done
+                if weather is None:
+                    weather = requests.get(
+                        "https://api.open-meteo.com/v1/forecast",
+                        params={
+                            "latitude": lat,
+                            "longitude": lon,
+                            "daily": features_to_get,
+                            "timezone": "auto",
+                            "forecast_days": 10
+                        }
+                    ).json()
+                    cache_weather_forecast[city] = weather
+                    save_to_cache(key, weather)
+
 
         if mode == "archive":
             weather = requests.get(
@@ -264,6 +307,8 @@ def get_yearly_weather(cities):
         if city in cache_weather:
             weather = cache_weather[city]
         else:
+            key = str(lat) + str(lon) + "yearly"
+            cached_weather = get_from_cache(key)
             weather = requests.get(
                             "https://archive-api.open-meteo.com/v1/archive",
                             params={
