@@ -1,12 +1,17 @@
 Metadata-Version: 2.4
 Name: climate_match
 Version: 0.1.0
+License-File: LICENSE.txt
 Requires-Dist: matplotlib>=3.10.9
 Requires-Dist: numpy>=2.2.6
 Requires-Dist: pandas>=2.3.3
+Requires-Dist: pymysql>=1.2.0
+Requires-Dist: python-dotenv>=1.2.2
 Requires-Dist: scikit-learn>=1.7.2
 Requires-Dist: seaborn>=0.13.2
+Requires-Dist: sqlalchemy>=2.0.51
 Requires-Dist: streamlit[charts]>=1.58.0
 Requires-Dist: torch>=2.12.1
 Requires-Dist: torchvision>=0.27.1
 Requires-Dist: transformers>=5.12.1
+Dynamic: license-file

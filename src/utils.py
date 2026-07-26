@@ -1,13 +1,30 @@
 import requests
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 from functools import lru_cache
 import numpy as np
 import pandas as pd
+import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from transformers import pipeline
+import json
 from src.constants import city_names
+
+load_dotenv()
+
+DB_HOST = os.getenv("MYSQL_ADDON_HOST")
+DB_PORT = os.getenv("MYSQL_ADDON_PORT")
+DB_NAME = os.getenv("MYSQL_ADDON_DB")
+DB_USER = os.getenv("MYSQL_ADDON_USER")
+DB_PASS = os.getenv("MYSQL_ADDON_PASSWORD")
+
+engine = create_engine(
+    f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
 # if this is modified, need to also update the cache structure for stored
 # weather data previously collected
@@ -17,6 +34,16 @@ features_to_get = ["temperature_2m_max",
                    "sunshine_duration"]
 
 
+def save_to_cache(key, data_dict):
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO api_cache (cache_key, data)
+                VALUES (:key, :data)
+                ON DUPLICATE KEY UPDATE data = :data, updated_at = CURRENT_TIMESTAMP
+            """),
+            {"key": key, "data": json.dumps(data_dict)}
+        )
 
 @lru_cache(maxsize=None)
 def get_city_coordinates(city):
@@ -61,7 +88,7 @@ def average_temp_range(weather):
 
 cache_weather_forecast = dict()
 
-
+@st.cache_resource
 def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end_date=None):
     """
     takes preference as input
@@ -120,11 +147,6 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
                 + np.array(score_temperature_ampl) 
                 + np.array(score_precipitation))
     return total.tolist()
-    
-    # except Exception as e:
-    #     print("Mode does not exist, or other issue interrupted:")
-    #     print(e)
-    #     sys.exit(1)
 
 
 ################################
