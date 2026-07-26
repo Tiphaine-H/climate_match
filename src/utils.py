@@ -159,9 +159,9 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
                             "forecast_days": 10
                         }
                     ).json()
-                    cache_weather_forecast[city] = weather
                     save_to_cache(key, weather)
 
+                cache_weather_forecast[city] = weather
 
         if mode == "archive":
             weather = requests.get(
@@ -308,8 +308,9 @@ def get_yearly_weather(cities):
             weather = cache_weather[city]
         else:
             key = str(lat) + str(lon) + "yearly"
-            cached_weather = get_from_cache(key)
-            weather = requests.get(
+            weather = get_from_cache(key)
+            if weather is None:
+                weather = requests.get(
                             "https://archive-api.open-meteo.com/v1/archive",
                             params={
                                 "latitude": lat,
@@ -320,7 +321,9 @@ def get_yearly_weather(cities):
                                 "timezone": "auto",
                             }
                     ).json()
+                save_to_cache(key, weather)
             cache_weather[city] = weather
+
         res.append(compute_obs(weather))
         
     res = pd.DataFrame(res)
