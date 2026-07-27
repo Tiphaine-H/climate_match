@@ -2,6 +2,7 @@ import requests
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 from functools import lru_cache
 import numpy as np
 import pandas as pd
@@ -14,6 +15,8 @@ from transformers import pipeline
 import json
 from datetime import datetime
 from src.constants import city_names
+
+today = datetime.today().strftime('%Y-%m-%d')
 
 load_dotenv()
 
@@ -30,13 +33,20 @@ engine = create_engine(
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS api_cache (
     cache_key VARCHAR(255) PRIMARY KEY,
-    data JSON,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    data JSON
 );
 """
 
-with engine.begin() as conn:
-    conn.execute(text(CREATE_TABLE_SQL))
+
+@st.cache_resource
+def init_db():
+    with engine.begin() as conn:
+        conn.execute(text(CREATE_TABLE_SQL))
+    return True
+
+
+init_db()
+
 
 # if this is modified, need to also update the cache structure for stored
 # weather data previously collected
@@ -47,28 +57,51 @@ features_to_get = ["temperature_2m_max",
 
 
 def save_to_cache(key, data_dict):
-    with engine.begin() as conn:
-        conn.execute(
-            text("""
-                INSERT INTO api_cache (cache_key, data)
-                VALUES (:key, :data)
-                ON DUPLICATE KEY UPDATE data = :data
-            """),
-            {"key": key, "data": json.dumps(data_dict)}
-        )
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO api_cache (cache_key, data)
+                    VALUES (:key, :data)
+                    ON DUPLICATE KEY UPDATE data = :data
+                """),
+                {"key": key, "data": json.dumps(data_dict)}
+            )
+    except OperationalError as e:
+        print(f"Database error, cache was not saved : {e}") 
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    DELETE FROM api_cache
+                """),
+                {"key": key, "data": json.dumps(data_dict)}
+            )
+        print("All cache emptied")
 
 
-def get_from_cache(key, max_age_seconds=3600):
+def get_from_cache(key):
     with engine.connect() as conn:
         result = conn.execute(
             text("""
                 SELECT data FROM api_cache
                 WHERE cache_key = :key
             """),
-            {"key": key, "max_age": max_age_seconds}
+            {"key": key}
         ).fetchone()
         return json.loads(result[0]) if result else None
     
+
+def empty_forecast_cache():
+    with engine.connect() as conn:
+        print("deleting older forecast data")
+        result = conn.execute(
+            text("""
+                DELETE FROM api_cache
+                WHERE cache_key NOT LIKE CONCAT('%', :date)
+            """),
+            {"date": today}
+        )
+        return json.loads(result[0]) if result else None
 
 @lru_cache(maxsize=None)
 def get_city_coordinates(city):
@@ -78,7 +111,6 @@ def get_city_coordinates(city):
     """
     try:
         cached = get_from_cache(city)
-        print(cached)
         if cached is not None:
             geo = cached
 
@@ -142,7 +174,6 @@ def compute_score(pref_temp, pref_range, pref_precip, mode, start_date=None, end
             else:
 
                 # get from db cache
-                today = datetime.today().strftime('%Y-%m-%d')
                 key = str(lat) + str(lon) + str(today)
                 weather = get_from_cache(key)
 
