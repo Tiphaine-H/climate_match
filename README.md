@@ -27,6 +27,7 @@ Cluster cities by climate profile :
 - K-means : the default value of k was chosen using the elbow method.
 - PCA : this dimensionality reduction was originally operated before k-means, as each daily weather data was used as a feature (365 features only just for temperature). When reducing the number of features to a much smaller number, I kept it that way to remove potential noise. However, it appeared to show better result working directly on them before reduction. PCA is still running post k-means to allow for a 2D visual representation of the climate profile clusters.
 - Forecast for your favorite city : as of now, the resulting favorite city is computed through scores. Future development will include weights, before switching to using a cosine similarity model instead.
+- Database on Clever Cloud to store city coordinates and weather data as long-term cache
 
 ## Technical Stack:
 - Python
@@ -34,6 +35,8 @@ Cluster cities by climate profile :
 - Streamlit (dashboard)
 - Open-Meteo API
 - matplotlib and seaborn for graphical representation
+- Clever Cloud with MySQL for lasting cache
+- GCP to host the app, and Streamlit Community Cloud as safe / second option
 
 ## How to: 
   ```
@@ -91,6 +94,6 @@ climate_match/
  
 ## Limits and Future Development
 
-- The app is limited to 52 cities for now, which is already slow on first runs. Future development will include improving the cache, this time using a database to store the data longer term.
+
 - Clustering is done only on the data of the year 2025. I would like to explore adding data for more years to see if improvement can be achieved. 
 - Instead of flat scores, I will compute the resulting favorite city with weights, replace the sliders with natural language processing, and eventually use a cosine similarity model instead of scores.
