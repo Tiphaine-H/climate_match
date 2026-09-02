@@ -1,6 +1,6 @@
 # Finding your preferred city
 
-ClimaCluster : Find your ideal city based on climate similarity and 10-day forecasts : try it out yourself [here](https://climate-match-dashboard-tiphaine.streamlit.app)!
+ClimaCluster : Find your ideal city based on climate similarity and 10-day forecasts : try it out yourself [here](https://climate-match-563687423135.europe-west1.run.app/) (Google Cloud) or [there](https://climate-match-dashboard-tiphaine.streamlit.app) (Streamlit Cloud) !
 
 ## What it does: 
 
